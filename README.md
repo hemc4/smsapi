@@ -1,4 +1,6 @@
+# SMS API
 
+## Dependencies
 Install PostgreSQL
 https://www.postgresql.org/download/
 
@@ -8,6 +10,9 @@ http://redis.io/download
 Install go
 https://golang.org/doc/install
 
+
+
+## Installation
 
 go install dependencies
 
@@ -20,7 +25,7 @@ go run ./*.go
 
 
 
-Libraries Used
+## Libraries Used
 
 Go sql driver for PostgreSQL
 github.com/lib/pq
