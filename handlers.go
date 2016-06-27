@@ -23,13 +23,14 @@ func InboundSms(w http.ResponseWriter, r *http.Request) {
 
 	//validate the form data
 	validateError :=validateFormData(from, to, text)
-	if validateError !=nil{
+	if validateError !=""{
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(`{"message": "", "error":"`+validateError+`"}`); err != nil {
 			panic(err)
 		}
+		return
 	}
-	//
+
 
 	// check if the to number exists for the authorized user
 	if numberExists(to){
@@ -42,6 +43,7 @@ func InboundSms(w http.ResponseWriter, r *http.Request) {
 				if err := json.NewEncoder(w).Encode(successMessage); err != nil {
 					panic(err)
 				}
+				return
 			}
 
 
@@ -69,11 +71,12 @@ func OutboundSms(w http.ResponseWriter, r *http.Request) {
 
 	//validate the formdata
 	validateError :=validateFormData(from, to, text)
-	if validateError !=nil{
+	if validateError !=""{
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(`{"message": "", "error":"`+validateError+`"}`); err != nil {
 			panic(err)
 		}
+		return
 	}
 	//check the redis cache
 	if cacheExists(from, to ){
@@ -81,6 +84,7 @@ func OutboundSms(w http.ResponseWriter, r *http.Request) {
 		if err := json.NewEncoder(w).Encode(`{"message": "", "error":"sms from `+from+` to `+to+` blocked by STOP request"}`); err != nil {
 			panic(err)
 		}
+		return
 	}
 
 	//check limit
@@ -90,7 +94,9 @@ func OutboundSms(w http.ResponseWriter, r *http.Request) {
 		if err := json.NewEncoder(w).Encode(`{"message": "", "error":"limit reached for from  `+from+` "}`); err != nil {
 			panic(err)
 		}
+		return
 	}
+
 
 
 	// check if the to number exists for the authorized user

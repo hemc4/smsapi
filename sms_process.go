@@ -3,9 +3,13 @@ package main
 import (
 	"database/sql"
 	_ "github.com/lib/pq"
-	"gopkg.in/redis.v3"
+	timerate "golang.org/x/time/rate"
+	"gopkg.in/redis.v4"
+	"gopkg.in/go-redis/rate.v4"
 	"log"
 	"time"
+	_"fmt"
+	_"strconv"
 )
 
 var db *sql.DB
@@ -105,7 +109,7 @@ func cacheExists(from, to string) bool {
 
 	val, err := client.Get(from).Result()
 	if err != nil {
-		panic(err)
+		//log.Fatalf("Pair not found %s", err.Error())
 	}
 	//fmt.Println("key : ", val)
 	if val==to {
@@ -119,19 +123,25 @@ func cacheExists(from, to string) bool {
 func validateFormData(from, to, text string) string{
 	var errorMessage string
 
-	if len(from < 6) || len(from > 16) {
+	if len(from) < 6 || len(from) > 16 {
 		errorMessage="from is invalid"
-	}
-
-	if len(to < 6) || len(to > 16) {
+	}else if len(to) < 6 || len(to)> 16 {
 		errorMessage="to is invalid"
 
-	}
-
-	if len(to < 1) || len(to > 120) {
+	} else if len(text) < 1|| len(text) > 120 {
 		errorMessage="text is invalid"
 
 	}
+
+	if len(from)==0{
+		errorMessage="from is missing"
+	}else if len(to)==0{
+		errorMessage="to is missing"
+	}else if len(text)==0{
+		errorMessage="text is missing"
+	}
+
+
 
 	return errorMessage
 
@@ -139,6 +149,28 @@ func validateFormData(from, to, text string) string{
 
 
 func limitExceed(from string ) bool{
-	//check limit
+
+	fromID := "from-"+from
+	limit := int64(50)
+	duration:=time.Duration(24)*time.Hour
+
+
+	ring := redis.NewRing(&redis.RingOptions{
+		Addrs: map[string]string{
+			"server1": "localhost:6379",
+		},
+	})
+	fallbackLimiter := timerate.NewLimiter(timerate.Every(time.Second), 100)
+	rateLimiter := rate.NewLimiter(ring, fallbackLimiter)
+
+	_, _, allowed := rateLimiter.Allow(fromID, limit,duration)
+
+	if !allowed {
+		//fmt.Println("limit exceed")
+		return true
+	}
+
+	//fmt.Println("Rate limit remaining: ", strconv.FormatInt(limit-rate, 10))
+
 	return false
 }
