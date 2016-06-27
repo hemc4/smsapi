@@ -16,19 +16,27 @@ https://golang.org/doc/install
 
 go install dependencies
 
+```
 go get ./...
-
+```
 run this project
 
+```
 go run ./*.go
+```
 
+## Test
+
+```
+go test
+```
 
 
 
 ## Libraries Used
 
 Go sql driver for PostgreSQL
-github.com/lib/pq
+https://github.com/lib/pq
 
 
 Go redis
