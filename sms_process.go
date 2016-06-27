@@ -100,16 +100,45 @@ func cacheSms(from, to string) bool {
 	return true
 }
 
-func validateFormData(from, to, text string) {
+
+func cacheExists(from, to string) bool {
+
+	val, err := client.Get(from).Result()
+	if err != nil {
+		panic(err)
+	}
+	//fmt.Println("key : ", val)
+	if val==to {
+		return true
+	}
+
+	return false
+}
+
+
+func validateFormData(from, to, text string) string{
 	var errorMessage string
 
 	if len(from < 6) || len(from > 16) {
-		return errorMessage
+		errorMessage="from is invalid"
 	}
 
 	if len(to < 6) || len(to > 16) {
+		errorMessage="to is invalid"
 
 	}
+
+	if len(to < 1) || len(to > 120) {
+		errorMessage="text is invalid"
+
+	}
+
 	return errorMessage
 
+}
+
+
+func limitExceed(from string ) bool{
+	//check limit
+	return false
 }
