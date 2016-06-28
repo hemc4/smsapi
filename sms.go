@@ -1,9 +1,9 @@
 package main
 
 type Sms struct {
-	from	string	`json:"from"`
-	to	string	`json:"to"`
-	text	string	`json:text`
+	From	string	`json:"from"`
+	To	string	`json:"to"`
+	Text	string	`json:"text"`
 }
 
 type Smss []Sms
