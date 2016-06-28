@@ -50,7 +50,7 @@ func InboundSms(w http.ResponseWriter, r *http.Request) {
 		}
 	}else{
 		errorMessage :=`{"message": "","error": "to parameter not found"}`
-		w.WriteHeader(401)
+		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(errorMessage); err != nil {
 			panic(err)
 		}
@@ -103,10 +103,18 @@ func OutboundSms(w http.ResponseWriter, r *http.Request) {
 	if !numberExists(from) {
 
 		errorMessage :=`{"message": "","error": "from parameter not found"}`
-		w.WriteHeader(401)
+		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(errorMessage); err != nil {
 			panic(err)
 		}
+		return
+	}
+
+
+	successMessage :=`{"message": "outbound sms ok","error": ""}`
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(successMessage); err != nil {
+		panic(err)
 	}
 }
 
