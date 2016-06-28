@@ -22,7 +22,8 @@ go get ./...
 run this project
 
 ```
-go run ./*.go
+go build && ./smsapi
+
 ```
 
 ## Test

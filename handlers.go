@@ -22,7 +22,7 @@ func InboundSms(w http.ResponseWriter, r *http.Request) {
 	text:= strings.TrimSpace(r.FormValue("text"))
 
 	//validate the form data
-	validateError :=validateFormData(from, to, text)
+	validateError :=ValidateFormData(from, to, text)
 	if validateError !=""{
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(`{"message": "", "error":"`+validateError+`"}`); err != nil {
@@ -70,7 +70,7 @@ func OutboundSms(w http.ResponseWriter, r *http.Request) {
 
 
 	//validate the formdata
-	validateError :=validateFormData(from, to, text)
+	validateError :=ValidateFormData(from, to, text)
 	if validateError !=""{
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(`{"message": "", "error":"`+validateError+`"}`); err != nil {
@@ -117,25 +117,25 @@ func basicAuth(h http.HandlerFunc) http.HandlerFunc {
 
 		s := strings.SplitN(r.Header.Get("Authorization"), " ", 2)
 		if len(s) != 2 {
-			http.Error(w, "Not authorized", 401)
+			http.Error(w, "Not authorized", 403)
 			return
 		}
 
 		b, err := base64.StdEncoding.DecodeString(s[1])
 		if err != nil {
-			http.Error(w, err.Error(), 401)
+			http.Error(w, err.Error(), 403)
 			return
 		}
 
 		pair := strings.SplitN(string(b), ":", 2)
 		if len(pair) != 2 {
-			http.Error(w, "Not authorized", 401)
+			http.Error(w, "Not authorized", 403)
 			return
 		}
 
 
 		if !userExists(pair[0],pair[1])  {
-			http.Error(w, "Not authorized", 401)
+			http.Error(w, "Not authorized", 403)
 			return
 		}
 

@@ -17,11 +17,11 @@ var client *redis.Client
 
 var userId int
 
-func init() {
+func InitDb(dataSourceName string){
 
 	var err error
 
-	db, err = sql.Open("postgres", "user=postgres password=root  dbname=hemc sslmode=disable")
+	db, err = sql.Open("postgres", dataSourceName)
 
 	if err != nil {
 		log.Fatalf("Error on initializing database connection: %s", err.Error())
@@ -34,10 +34,14 @@ func init() {
 		log.Fatalf("Error: Could not establish a connection with the database : %s ", err.Error())
 	}
 
+}
+
+func InitRedis(address, password string , dbcount int ){
+	var err error
 	client = redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "", // no password set
-		DB:       0,  // use default DB
+		Addr:     address,
+		Password: password, // no password set
+		DB:       dbcount,  // use default DB
 	})
 
 	_, err = client.Ping().Result()
@@ -120,7 +124,7 @@ func cacheExists(from, to string) bool {
 }
 
 
-func validateFormData(from, to, text string) string{
+func ValidateFormData(from, to, text string) string{
 	var errorMessage string
 
 	if len(from) < 6 || len(from) > 16 {
@@ -140,8 +144,6 @@ func validateFormData(from, to, text string) string{
 	}else if len(text)==0{
 		errorMessage="text is missing"
 	}
-
-
 
 	return errorMessage
 
