@@ -46,8 +46,6 @@ https://github.com/go-redis/redis
 Go redis rate limitor
 https://github.com/go-redis/rate
 
-Url router and dispacther
-https://github.com/gorilla/mux
 
 
 
