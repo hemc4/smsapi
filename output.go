@@ -1,6 +1,6 @@
 package main
 
 type jsonOutput struct {
-	Message	string	`json:"text"`
-	Error	string	`json:"text"`
+	Message	string	`json:"message"`
+	Error	string	`json:"error"`
 }
