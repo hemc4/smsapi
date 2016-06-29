@@ -48,6 +48,7 @@ var outboundtests = []struct {
 	outmessage  string
 	outerror string
 }{
+
 	{"plivo1","20S0KPNOIM","12345678", "87654321", "hello", "","from parameter not found"},
 	{"plivo1","20S0KPNOIM","12345678", "31297728125", "hello", "","sms from 12345678 to 31297728125 blocked by STOP request"},
 	{"plivo1","20S0KPNOIM","31297728125", "31297728190", "STOP", "outbound sms ok",""},
@@ -126,4 +127,26 @@ func TestOutboundSms(t *testing.T) {
 				outboundtest.from,outboundtest.to,outboundtest.text,outboundtest.outmessage, output.Message, outboundtest.outerror, output.Error)
 		}
 	}
+}
+
+
+
+func TestBasicAuth(t *testing.T) {
+
+	rec := httptest.NewRecorder()
+	request, err := http.NewRequest("POST", "/inbound/sms", nil)
+	request.SetBasicAuth("plivotest", "JKHGkjgd")
+
+
+	env := Env{db: &mockDB{}, client:&mockClient{}}
+	http.HandlerFunc(env.BasicAuth(env.InboundSms)).ServeHTTP(rec, request)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if rec.Code != 403 {
+		t.Errorf("Unauthorised access  expected: %d", rec.Code)
+	}
+
 }

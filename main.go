@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 	"encoding/base64"
-	"fmt"
+
 )
 
 
@@ -14,8 +14,6 @@ type Env struct {
 	db Datastore
 	client CacheStore
 }
-
-
 
 
 func main() {
@@ -67,7 +65,7 @@ func (env *Env)  BasicAuth( h http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		fmt.Println(pair[0],pair[1])
+		//fmt.Println(pair[0],pair[1])
 		if !env.db.UserExists( pair[0],pair[1])  {
 			http.Error(w, "Not authorized", 403)
 			return
