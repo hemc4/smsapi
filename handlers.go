@@ -2,19 +2,20 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
+	_"fmt"
 	"net/http"
 	"strings"
-	"encoding/base64"
 	_"log"
 )
 
-func Index(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "Welcome to sms api !\n")
-}
 
 
-func InboundSms(w http.ResponseWriter, r *http.Request) {
+func (env *Env) InboundSms(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, http.StatusText(405), 405)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
 	to := strings.TrimSpace(r.FormValue("to"))
@@ -33,11 +34,11 @@ func InboundSms(w http.ResponseWriter, r *http.Request) {
 
 
 	// check if the to number exists for the authorized user
-	if numberExists(to){
+	if numberExists(env.db,to){
 
 		if text=="STOP" || text=="STOP\n" || text=="STOP\r" || text=="STOP\r\n" {
 			//save to redis
-			if cacheSms(from,to) {
+			if cacheSms(env.client,from,to) {
 				successMessage:=`{"message": "inbound sms ok", "error":""}`
 				w.WriteHeader(http.StatusOK)
 				if err := json.NewEncoder(w).Encode(successMessage); err != nil {
@@ -61,7 +62,12 @@ func InboundSms(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func OutboundSms(w http.ResponseWriter, r *http.Request) {
+func (env *Env) OutboundSms(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, http.StatusText(405), 405)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
 	to := strings.TrimSpace(r.FormValue("to"))
@@ -79,7 +85,7 @@ func OutboundSms(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	//check the redis cache
-	if cacheExists(from, to ){
+	if cacheExists(env.client, from, to ){
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(`{"message": "", "error":"sms from `+from+` to `+to+` blocked by STOP request"}`); err != nil {
 			panic(err)
@@ -100,7 +106,7 @@ func OutboundSms(w http.ResponseWriter, r *http.Request) {
 
 
 	// check if the to number exists for the authorized user
-	if !numberExists(from) {
+	if !numberExists(env.db, from) {
 
 		errorMessage :=`{"message": "","error": "from parameter not found"}`
 		w.WriteHeader(http.StatusOK)
@@ -115,38 +121,5 @@ func OutboundSms(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(successMessage); err != nil {
 		panic(err)
-	}
-}
-
-func basicAuth(h http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-
-		w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
-
-		s := strings.SplitN(r.Header.Get("Authorization"), " ", 2)
-		if len(s) != 2 {
-			http.Error(w, "Not authorized", 403)
-			return
-		}
-
-		b, err := base64.StdEncoding.DecodeString(s[1])
-		if err != nil {
-			http.Error(w, err.Error(), 403)
-			return
-		}
-
-		pair := strings.SplitN(string(b), ":", 2)
-		if len(pair) != 2 {
-			http.Error(w, "Not authorized", 403)
-			return
-		}
-
-
-		if !userExists(pair[0],pair[1])  {
-			http.Error(w, "Not authorized", 403)
-			return
-		}
-
-		h.ServeHTTP(w, r)
 	}
 }
