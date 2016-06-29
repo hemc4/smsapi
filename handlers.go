@@ -6,6 +6,7 @@ import (
 	_ "log"
 	"net/http"
 	"strings"
+	"fmt"
 )
 
 func (env *Env) InboundSms(w http.ResponseWriter, r *http.Request) {
@@ -24,21 +25,23 @@ func (env *Env) InboundSms(w http.ResponseWriter, r *http.Request) {
 	validateError := ValidateFormData(from, to, text)
 	if validateError != "" {
 		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(`{"message": "", "error":"` + validateError + `"}`); err != nil {
+		out:=jsonOutput{Message:"",Error:validateError}
+		if err := json.NewEncoder(w).Encode(out); err != nil {
 			panic(err)
 		}
 		return
 	}
 
+	//fmt.Println(text)
 	// check if the to number exists for the authorized user
 	if env.db.NumberExists(to) {
 
-		if text == "STOP" || text == "STOP\n" || text == "STOP\r" || text == "STOP\r\n" {
+		if text == `STOP` || text == `STOP\n`|| text == `STOP\r` || text == `STOP\r\n` {
 			//save to redis
 			if env.client.CacheSms(from, to) {
-				successMessage := `{"message": "inbound sms ok", "error":""}`
+				out:=jsonOutput{Message:"inbound sms ok",Error:""}
 				w.WriteHeader(http.StatusOK)
-				if err := json.NewEncoder(w).Encode(successMessage); err != nil {
+				if err := json.NewEncoder(w).Encode(out); err != nil {
 					panic(err)
 				}
 				return
@@ -46,9 +49,9 @@ func (env *Env) InboundSms(w http.ResponseWriter, r *http.Request) {
 
 		}
 	} else {
-		errorMessage := `{"message": "","error": "to parameter not found"}`
+		out:=jsonOutput{Message:"",Error:"to parameter not found"}
 		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(errorMessage); err != nil {
+		if err := json.NewEncoder(w).Encode(out); err != nil {
 			panic(err)
 		}
 	}
@@ -71,7 +74,8 @@ func (env *Env) OutboundSms(w http.ResponseWriter, r *http.Request) {
 	validateError := ValidateFormData(from, to, text)
 	if validateError != "" {
 		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(`{"message": "", "error":"` + validateError + `"}`); err != nil {
+		out:=jsonOutput{Message:"",Error:validateError}
+		if err := json.NewEncoder(w).Encode(out); err != nil {
 			panic(err)
 		}
 		return
@@ -79,7 +83,8 @@ func (env *Env) OutboundSms(w http.ResponseWriter, r *http.Request) {
 	//check the redis cache
 	if env.client.CacheExists(from, to) {
 		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(`{"message": "", "error":"sms from ` + from + ` to ` + to + ` blocked by STOP request"}`); err != nil {
+		out:=jsonOutput{Message:"",Error:`sms from ` + from + ` to ` + to + ` blocked by STOP request`}
+		if err := json.NewEncoder(w).Encode(out); err != nil {
 			panic(err)
 		}
 		return
@@ -89,7 +94,8 @@ func (env *Env) OutboundSms(w http.ResponseWriter, r *http.Request) {
 
 	if limitExceed(from) {
 		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(`{"message": "", "error":"limit reached for from  ` + from + ` "}`); err != nil {
+		out:=jsonOutput{Message:"",Error:`limit reached for from  ` + from}
+		if err := json.NewEncoder(w).Encode(out); err != nil {
 			panic(err)
 		}
 		return
@@ -97,18 +103,17 @@ func (env *Env) OutboundSms(w http.ResponseWriter, r *http.Request) {
 
 	// check if the to number exists for the authorized user
 	if !env.db.NumberExists(from) {
-
-		errorMessage := `{"message": "","error": "from parameter not found"}`
+		out:=jsonOutput{Message:"",Error:"from parameter not found"}
 		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(errorMessage); err != nil {
+		if err := json.NewEncoder(w).Encode(out); err != nil {
 			panic(err)
 		}
 		return
 	}
 
-	successMessage := `{"message": "outbound sms ok","error": ""}`
+	out:=jsonOutput{Message:"outbound sms ok",Error:""}
 	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(successMessage); err != nil {
+	if err := json.NewEncoder(w).Encode(out); err != nil {
 		panic(err)
 	}
 }
