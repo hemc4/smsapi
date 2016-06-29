@@ -1,6 +1,18 @@
 package main
 
-import "testing"
+
+import (
+	"testing"
+)
+
+type mockDB struct{
+
+}
+
+type mockClient struct{
+
+}
+
 
 var smstests = []struct {
 	from string
@@ -30,9 +42,64 @@ func TestValidateFormData(t *testing.T) {
 	}
 }
 
-func TestIndex(t *testing.T) {
-	t.Log("hello form testing ")
-	if true != true {
-		t.Error("Never show it")
+func (mdb *mockDB) UserExists(username, auth_id string) bool {
+
+	var users =[]struct {
+		username string
+		auth_id string
+		id int
+	}{
+		{"plivo1","20S0KPNOIM",1},
+		{"plivo2","54P2EOKQ47",2},
+
 	}
+
+	for _, v  := range users{
+		if username==v.username && auth_id==v.auth_id {
+			userId=v.id
+			return true
+		}
+	}
+
+	return false
 }
+
+
+func (mdb *mockDB) NumberExists(number string) bool  {
+	//fmt.Println("Userid: ", userId)
+	//fmt.Println("number: ", number)
+
+	allowednumbers := map[string]int{ "31297728125":1, "441224459571":2 };
+	for k, v  := range allowednumbers {
+		if number==k && userId==v {
+			return true
+		}
+	}
+
+	return false
+}
+
+
+func (mclient *mockClient) CacheSms(from, to string) bool{
+
+	//fmt.Println("to value in mock cachesms: ",to)
+	if to=="31297728125" {
+		return true
+	}
+
+	return false
+}
+
+func (mclient *mockClient) CacheExists(from, to string) bool{
+
+	//fmt.Println("to value in mock cachesms: ",to)
+
+	if to =="31297728125" {
+		return true
+	}
+
+	return false
+
+}
+
+

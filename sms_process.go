@@ -9,6 +9,8 @@ import (
 	"gopkg.in/redis.v4"
 	_ "strconv"
 	"time"
+	_"log"
+
 )
 
 type Datastore interface {
@@ -67,6 +69,7 @@ func NewCache(address, password string, dbcount int) (*Client, error) {
 func (db *DB) UserExists(username, auth_id string) bool {
 
 	var err error
+	userId=0
 
 	err = db.QueryRow("select id from account where username=$1 and auth_id=$2", username, auth_id).Scan(&userId)
 
@@ -108,7 +111,8 @@ func (client *Client) CacheSms(from, to string) bool {
 	//fmt.Println("saving data to redis")
 	err := client.Set(from, to, 4*60*60*60*time.Second).Err()
 	if err != nil {
-		panic(err)
+		//log.Fatalf("Unable to save %s", err.Error())
+		return false
 	}
 
 	//val, err := client.Get(from).Result()
@@ -125,6 +129,8 @@ func (client *Client) CacheExists(from, to string) bool {
 	val, err := client.Get(from).Result()
 	if err != nil {
 		//log.Fatalf("Pair not found %s", err.Error())
+		return false
+
 	}
 	//fmt.Println("key : ", val)
 	if val == to {

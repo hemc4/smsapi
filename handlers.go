@@ -6,7 +6,8 @@ import (
 	_ "log"
 	"net/http"
 	"strings"
-	"fmt"
+
+
 )
 
 func (env *Env) InboundSms(w http.ResponseWriter, r *http.Request) {
@@ -17,9 +18,12 @@ func (env *Env) InboundSms(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
+
 	to := strings.TrimSpace(r.FormValue("to"))
 	from := strings.TrimSpace(r.FormValue("from"))
 	text := strings.TrimSpace(r.FormValue("text"))
+
+	//fmt.Println(from)
 
 	//validate the form data
 	validateError := ValidateFormData(from, to, text)
@@ -34,27 +38,36 @@ func (env *Env) InboundSms(w http.ResponseWriter, r *http.Request) {
 
 	//fmt.Println(text)
 	// check if the to number exists for the authorized user
-	if env.db.NumberExists(to) {
-
-		if text == `STOP` || text == `STOP\n`|| text == `STOP\r` || text == `STOP\r\n` {
-			//save to redis
-			if env.client.CacheSms(from, to) {
-				out:=jsonOutput{Message:"inbound sms ok",Error:""}
-				w.WriteHeader(http.StatusOK)
-				if err := json.NewEncoder(w).Encode(out); err != nil {
-					panic(err)
-				}
-				return
-			}
-
-		}
-	} else {
+	if !env.db.NumberExists(to) {
 		out:=jsonOutput{Message:"",Error:"to parameter not found"}
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(out); err != nil {
 			panic(err)
+
 		}
+		return
+
 	}
+
+	//save to redis
+	if text == `STOP` || text == `STOP\n`|| text == `STOP\r` || text == `STOP\r\n` {
+		//save to redis
+		if !env.client.CacheSms(from, to) {
+			out:=jsonOutput{Message:"",Error:"unknown failure"}
+			w.WriteHeader(http.StatusOK)
+			if err := json.NewEncoder(w).Encode(out); err != nil {
+				panic(err)
+			}
+		}
+
+	}
+
+	out:=jsonOutput{Message:"inbound sms ok",Error:""}
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(out); err != nil {
+		panic(err)
+	}
+
 
 }
 
@@ -70,6 +83,7 @@ func (env *Env) OutboundSms(w http.ResponseWriter, r *http.Request) {
 	from := strings.TrimSpace(r.FormValue("from"))
 	text := strings.TrimSpace(r.FormValue("text"))
 
+	//fmt.Println(from)
 	//validate the formdata
 	validateError := ValidateFormData(from, to, text)
 	if validateError != "" {
@@ -80,6 +94,7 @@ func (env *Env) OutboundSms(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+
 	//check the redis cache
 	if env.client.CacheExists(from, to) {
 		w.WriteHeader(http.StatusOK)
@@ -91,7 +106,6 @@ func (env *Env) OutboundSms(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//check limit
-
 	if limitExceed(from) {
 		w.WriteHeader(http.StatusOK)
 		out:=jsonOutput{Message:"",Error:`limit reached for from  ` + from}
