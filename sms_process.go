@@ -2,7 +2,7 @@ package main
 
 import (
 	"database/sql"
-	_"fmt"
+	_ "fmt"
 	_ "github.com/lib/pq"
 	timerate "golang.org/x/time/rate"
 	"gopkg.in/go-redis/rate.v4"
@@ -12,10 +12,27 @@ import (
 	"time"
 )
 
+type Datastore interface {
+	UserExists(username, auth_id string) bool
+	NumberExists(number string) bool
+}
+
+type CacheStore interface {
+	CacheSms(from, to string) bool
+	CacheExists(from, to string) bool
+}
+
+type DB struct {
+	*sql.DB
+}
+
+type Client struct {
+	*redis.Client
+}
 
 var userId int
 
-func NewDB(dataSourceName string) (*sql.DB, error) {
+func NewDB(dataSourceName string) (*DB, error) {
 	var err error
 
 	db, err := sql.Open("postgres", dataSourceName)
@@ -28,10 +45,10 @@ func NewDB(dataSourceName string) (*sql.DB, error) {
 		return nil, err
 	}
 
-	return db, nil
+	return &DB{db}, nil
 }
 
-func NewCache(address, password string, dbcount int) (*redis.Client, error) {
+func NewCache(address, password string, dbcount int) (*Client, error) {
 	var err error
 	client := redis.NewClient(&redis.Options{
 		Addr:     address,
@@ -45,10 +62,10 @@ func NewCache(address, password string, dbcount int) (*redis.Client, error) {
 		return nil, err
 	}
 
-	return client, nil
+	return &Client{client}, nil
 }
 
-func userExists(db *sql.DB,username, auth_id string) bool {
+func (db *DB) UserExists(username, auth_id string) bool {
 
 	var err error
 
@@ -66,7 +83,7 @@ func userExists(db *sql.DB,username, auth_id string) bool {
 	return false
 }
 
-func numberExists(db *sql.DB,number string) bool {
+func (db *DB) NumberExists(number string) bool {
 
 	//fmt.Println("userid :", userId)
 	//fmt.Println("number : ", number)
@@ -87,7 +104,7 @@ func numberExists(db *sql.DB,number string) bool {
 	return false
 }
 
-func cacheSms(client *redis.Client, from, to string) bool {
+func (client *Client) CacheSms(from, to string) bool {
 	//save to redis
 	//fmt.Println("saving data to redis")
 	err := client.Set(from, to, 4*60*60*60*time.Second).Err()
@@ -104,7 +121,7 @@ func cacheSms(client *redis.Client, from, to string) bool {
 	return true
 }
 
-func cacheExists(client *redis.Client, from, to string) bool {
+func (client *Client) CacheExists(from, to string) bool {
 
 	val, err := client.Get(from).Result()
 	if err != nil {
@@ -118,7 +135,7 @@ func cacheExists(client *redis.Client, from, to string) bool {
 	return false
 }
 
-func ValidateFormData(from, to, text string) string{
+func ValidateFormData(from, to, text string) string {
 
 	//fmt.Println("from : %q, to = %q , text = %q", from, to, text)
 	var errorMessage string

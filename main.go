@@ -3,16 +3,15 @@ package main
 import (
 	"log"
 	"net/http"
-	"gopkg.in/redis.v4"
-	"database/sql"
 	"strings"
 	"encoding/base64"
 )
 
 
 type Env struct {
-	db *sql.DB
-	client *redis.Client
+
+	db Datastore
+	client CacheStore
 }
 
 
@@ -68,7 +67,7 @@ func (env *Env)  BasicAuth( h http.HandlerFunc) http.HandlerFunc {
 		}
 
 
-		if !userExists(env.db, pair[0],pair[1])  {
+		if !env.db.UserExists( pair[0],pair[1])  {
 			http.Error(w, "Not authorized", 403)
 			return
 		}

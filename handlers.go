@@ -2,13 +2,11 @@ package main
 
 import (
 	"encoding/json"
-	_"fmt"
+	_ "fmt"
+	_ "log"
 	"net/http"
 	"strings"
-	_"log"
 )
-
-
 
 func (env *Env) InboundSms(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
@@ -20,26 +18,25 @@ func (env *Env) InboundSms(w http.ResponseWriter, r *http.Request) {
 
 	to := strings.TrimSpace(r.FormValue("to"))
 	from := strings.TrimSpace(r.FormValue("from"))
-	text:= strings.TrimSpace(r.FormValue("text"))
+	text := strings.TrimSpace(r.FormValue("text"))
 
 	//validate the form data
-	validateError :=ValidateFormData(from, to, text)
-	if validateError !=""{
+	validateError := ValidateFormData(from, to, text)
+	if validateError != "" {
 		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(`{"message": "", "error":"`+validateError+`"}`); err != nil {
+		if err := json.NewEncoder(w).Encode(`{"message": "", "error":"` + validateError + `"}`); err != nil {
 			panic(err)
 		}
 		return
 	}
 
-
 	// check if the to number exists for the authorized user
-	if numberExists(env.db,to){
+	if env.db.NumberExists(to) {
 
-		if text=="STOP" || text=="STOP\n" || text=="STOP\r" || text=="STOP\r\n" {
+		if text == "STOP" || text == "STOP\n" || text == "STOP\r" || text == "STOP\r\n" {
 			//save to redis
-			if cacheSms(env.client,from,to) {
-				successMessage:=`{"message": "inbound sms ok", "error":""}`
+			if env.client.CacheSms(from, to) {
+				successMessage := `{"message": "inbound sms ok", "error":""}`
 				w.WriteHeader(http.StatusOK)
 				if err := json.NewEncoder(w).Encode(successMessage); err != nil {
 					panic(err)
@@ -47,18 +44,14 @@ func (env *Env) InboundSms(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-
 		}
-	}else{
-		errorMessage :=`{"message": "","error": "to parameter not found"}`
+	} else {
+		errorMessage := `{"message": "","error": "to parameter not found"}`
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(errorMessage); err != nil {
 			panic(err)
 		}
 	}
-
-
-
 
 }
 
@@ -74,20 +67,19 @@ func (env *Env) OutboundSms(w http.ResponseWriter, r *http.Request) {
 	from := strings.TrimSpace(r.FormValue("from"))
 	text := strings.TrimSpace(r.FormValue("text"))
 
-
 	//validate the formdata
-	validateError :=ValidateFormData(from, to, text)
-	if validateError !=""{
+	validateError := ValidateFormData(from, to, text)
+	if validateError != "" {
 		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(`{"message": "", "error":"`+validateError+`"}`); err != nil {
+		if err := json.NewEncoder(w).Encode(`{"message": "", "error":"` + validateError + `"}`); err != nil {
 			panic(err)
 		}
 		return
 	}
 	//check the redis cache
-	if cacheExists(env.client, from, to ){
+	if env.client.CacheExists(from, to) {
 		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(`{"message": "", "error":"sms from `+from+` to `+to+` blocked by STOP request"}`); err != nil {
+		if err := json.NewEncoder(w).Encode(`{"message": "", "error":"sms from ` + from + ` to ` + to + ` blocked by STOP request"}`); err != nil {
 			panic(err)
 		}
 		return
@@ -95,20 +87,18 @@ func (env *Env) OutboundSms(w http.ResponseWriter, r *http.Request) {
 
 	//check limit
 
-	if limitExceed(from){
+	if limitExceed(from) {
 		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(`{"message": "", "error":"limit reached for from  `+from+` "}`); err != nil {
+		if err := json.NewEncoder(w).Encode(`{"message": "", "error":"limit reached for from  ` + from + ` "}`); err != nil {
 			panic(err)
 		}
 		return
 	}
 
-
-
 	// check if the to number exists for the authorized user
-	if !numberExists(env.db, from) {
+	if !env.db.NumberExists(from) {
 
-		errorMessage :=`{"message": "","error": "from parameter not found"}`
+		errorMessage := `{"message": "","error": "from parameter not found"}`
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(errorMessage); err != nil {
 			panic(err)
@@ -116,8 +106,7 @@ func (env *Env) OutboundSms(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
-	successMessage :=`{"message": "outbound sms ok","error": ""}`
+	successMessage := `{"message": "outbound sms ok","error": ""}`
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(successMessage); err != nil {
 		panic(err)
