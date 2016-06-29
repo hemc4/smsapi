@@ -1,5 +1,14 @@
 # SMS API
 
+
+## Install
+
+
+```
+go get github.com/hemendra619/smsapi
+```
+
+
 ## Dependencies
 Install PostgreSQL
 https://www.postgresql.org/download/
@@ -12,26 +21,21 @@ https://golang.org/doc/install
 
 
 
-## Installation
-
-go install dependencies
-
+## Test
+Run tests
 ```
-go get ./...
+go test
 ```
+
+No PostgreSQL database or Reidis db required to test. All db methods has been mocked.
+
+#Run
 run this project
 
 ```
 go build && ./smsapi
 
 ```
-
-## Test
-
-```
-go test
-```
-
 
 
 ## Libraries Used
